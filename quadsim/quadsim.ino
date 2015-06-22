@@ -33,8 +33,8 @@ void loop() {
     {
       case 'f': dir = 1; break;
       case 'r': dir = -1; break;
-      case 'e': dir = 1; break;
-      case 'd': dir = 0; break;
+      case 'e': enable = 1; break;
+      case 'd': enable = 0; break;
       case 'q':
         rate += 10;
         Timer1.setPeriod(rate);
@@ -51,6 +51,11 @@ void loop() {
       Serial.print("Forward ");
     else
       Serial.print("Backward ");
+
+    if (enable) 
+      Serial.print("Enabled ");
+    else
+      Serial.print("Disabled ");
 
     Serial.print(rate * 2);
     Serial.println("uS");
