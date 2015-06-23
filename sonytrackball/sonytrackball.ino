@@ -32,6 +32,10 @@ void xAxisISR() {
 }
 
 void loop() {
-  Serial.print (10000L/xRate);
+  
+  noInterrupts();
+  long rate = xRate;
+  interrupts();
+  Serial.print (10000L/rate);
   Serial.println (dir);
 }
