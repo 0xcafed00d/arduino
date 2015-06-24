@@ -3,7 +3,8 @@
 int states[] = {0, 1, 1, 0};
 volatile int state = 0;
 volatile int dir = 1;
-volatile int enable = 1;
+volatile int enable = 0;
+volatile int count = 0;
 long rate = 1000;
 
 void setup() {
@@ -22,6 +23,9 @@ void intFunc() {
     digitalWrite(10, states[state]);
     digitalWrite(9, states[state + 1 & 0x3]);
     state = (state + dir) & 0x3;
+    count--;
+    if (count == 0) 
+      enable = false;
   }
 }
 
@@ -44,6 +48,10 @@ void loop() {
         if (rate < 100) rate = 100;
         Timer1.setPeriod(rate);
         break;
+      case 'p':
+        enable = 1;
+        count = 20;
+        break;
     }
 
 
@@ -57,7 +65,7 @@ void loop() {
     else
       Serial.print("Disabled ");
 
-    Serial.print(rate * 2);
+    Serial.print(rate * 4);
     Serial.println("uS");
 
   }
