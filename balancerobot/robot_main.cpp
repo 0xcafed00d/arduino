@@ -1,9 +1,15 @@
 #include <Arduino.h>
 #include <Servo.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+
 //#include <avr/pgmspace.h>
 
 #include "utils.h"
 #include "hardwaredefs.h"
+
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 struct ServerOffsets {
 	int leftVal;
@@ -21,6 +27,20 @@ void setup() {
 	pinMode(8, OUTPUT);
   digitalWrite(8, HIGH); // turn on the radio
 	Serial.begin(115200);
+
+  /* Initialise the sensor */
+  if(!bno.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.println(F("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!\n"));
+    while(1);
+  }
+
+  Serial.println(F("\n\nBNO055 detected OK\n\n"));
+  
+  delay(1000);
+      
+  bno.setExtCrystalUse(true);
  
 	pinMode(internalLEDPin, OUTPUT);		
 }
@@ -65,8 +85,19 @@ struct GyroCalState : public State{
 
 	void action () {
 
+    sensors_event_t event; 
+    bno.getEvent(&event);
+    
+    /* Display the floating point data */
+    Serial.print("X: ");
+    Serial.print(event.orientation.x, 4);
+    Serial.print("\tY: ");
+    Serial.print(event.orientation.y, 4);
+    Serial.print("\tZ: ");
+    Serial.print(event.orientation.z, 4);
+    Serial.println("");
+  
 		delay(100);
-
 
 		int ch = Serial.read();
 		if (ch > 0)
