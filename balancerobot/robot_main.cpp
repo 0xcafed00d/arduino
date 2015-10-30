@@ -1,8 +1,4 @@
 #include <Arduino.h>
-#include <I2Cdev.h>
-#include <MPU6050.h>
-#include <EEPROM.h>
-#include <Wire.h>
 #include <Servo.h>
 //#include <avr/pgmspace.h>
 
@@ -14,34 +10,18 @@ struct ServerOffsets {
 	int rightVal;
 };
 
-struct IMUOffsets {
-	vec3d<int16_t> accel;
-	vec3d<int16_t> gyro;
-};
-
 struct ConfigData {
 	ServerOffsets servo;
-	IMUOffsets imu;
 };
 
-MPU6050 accelgyro;
-
 bool blinkState = false;
-
 
 void setup() {
 	
 	pinMode(8, OUTPUT);
-  	digitalWrite(8, HIGH); // turn on the radio
-	Wire.begin();
+  digitalWrite(8, HIGH); // turn on the radio
 	Serial.begin(115200);
-
-	Serial.println(F("Initializing I2C devices..."));
-	accelgyro.initialize();
-
-	Serial.println(F("Testing device connections..."));
-	Serial.println(accelgyro.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
-
+ 
 	pinMode(internalLEDPin, OUTPUT);		
 }
 
@@ -77,44 +57,13 @@ void stateGoto (State* state) {
 
 struct GyroCalState : public State{
 
-	RunningAverage<int16_t, 16> itemp;
-	int32_t samples = 1;
-	vec3d<double> accelTot;
-	vec3d<double> gyroTot;
 
 	void enter () {
 		Serial.println(F("\n\nEntering: Gyro Offest Calibration"));
 
-		samples = 1;
-		clearVector(accelTot);
-		clearVector(gyroTot);
 	}
 
 	void action () {
-		vec3d<int16_t> accel;
-		vec3d<int16_t> gyro;
-
-		itemp << accelgyro.getTemperature();
-		accelgyro.getMotion6(&accel.x, &accel.y, &accel.z, 
-							 &gyro.x, &gyro.y, &gyro.z);
-		addVector(accel, accelTot);
-		addVector(gyro, gyroTot);
-
-		vec3d<double> avAccel = divVector(accelTot, samples);
-		vec3d<double> avGyro = divVector(gyroTot, samples);
-
-		float temp = (float)itemp.val() / 340 + 36.53f;
-
-		Serial.print("a/g: ");
-		Serial.print(samples);			Serial.print("\t");
-		Serial.print(temp); 			Serial.print("\t");
-		printVec3d(avAccel, Serial);	Serial.print("\t");
-		printVec3d(avGyro, Serial);		Serial.print("\n\r");
-
-		blinkState = !blinkState;
-		digitalWrite(internalLEDPin, blinkState);
-
-		samples++;
 
 		delay(100);
 
@@ -135,7 +84,6 @@ struct GyroCalState : public State{
 
 
 GyroCalState gyroCalState;
-
 
 
 struct ServoCalState : public State{
@@ -203,9 +151,6 @@ struct MenuState : public State{
 
 		cd.servo.leftVal = 1500;
 		cd.servo.rightVal = 1500;
-
-		clearVector(cd.imu.accel);
-		clearVector(cd.imu.gyro);
 
 		writeStructEEPROM(cd, 0);		
 		Serial.println(F("\n  Default Config Written \n"));
