@@ -11,13 +11,13 @@
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
-struct ServerOffsets {
+struct ServoOffsets {
 	int leftVal;
 	int rightVal;
 };
 
 struct ConfigData {
-	ServerOffsets servo;
+	ServoOffsets servo;
 };
 
 bool blinkState = false;
@@ -122,7 +122,7 @@ struct ServoCalState : public State{
 	Servo leftServo;
 	Servo rightServo;
 
-	ServerOffsets offsets;
+	ServoOffsets offsets;
 
 	void update () {
 		leftServo.writeMicroseconds(offsets.leftVal);
