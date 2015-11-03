@@ -10,7 +10,7 @@ MotorDrive::MotorDrive (Servo *lservo, Servo *rservo)
   setServoConfig (c, c);
 }
 
-void MotorDrive::setServoConfig (ServoConfig lconf, ServoConfig rconf) {
+void MotorDrive::setServoConfig (const ServoConfig& lconf, const ServoConfig& rconf) {
   m_lconf = lconf;
   m_rconf = rconf;
 }
@@ -31,4 +31,8 @@ void MotorDrive::drive (int lvalue, int rvalue) {
    m_rservo->writeMicroseconds(translate (rvalue, m_rconf.zeropoint, m_rconf.range)); 
 }
 
+void MotorDrive::setRaw (int lvalue, int rvalue) {
+   m_lservo->writeMicroseconds(lvalue); 
+   m_rservo->writeMicroseconds(rvalue); 
+}
 
