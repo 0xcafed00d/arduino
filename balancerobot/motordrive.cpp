@@ -7,7 +7,7 @@ MotorDrive::MotorDrive (Servo *lservo, Servo *rservo)
   , m_rservo (rservo) {
 
   ServoConfig c { 0, 500 };
-  setServoConfig (c, c);
+  setServoConfig(c, c);
 }
 
 void MotorDrive::setServoConfig (const ServoConfig& lconf, const ServoConfig& rconf) {

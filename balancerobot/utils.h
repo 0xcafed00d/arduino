@@ -13,8 +13,8 @@ struct vec3d {
 
 template <typename val_t, typename stream_t> 
 void printVec3d (const val_t& val, stream_t& str) {
-	str.print("[");
-	str.print(val.x); str.print(",");
+  	str.print("[");
+    str.print(val.x); str.print(",");
 	str.print(val.y); str.print(",");
 	str.print(val.z); str.print("]");
 }

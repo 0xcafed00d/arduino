@@ -8,70 +8,19 @@
 
 #include "utils.h"
 #include "hardwaredefs.h"
+#include "motordrive.h"
+#include "state.h"
+
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 bool blinkState = false;
 
-void setup() {
-	
-	pinMode(8, OUTPUT);
-  digitalWrite(8, HIGH); // turn on the radio
-	Serial.begin(115200);
-
-  /* Initialise the sensor */
-  if(!bno.begin())
-  {
-    /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.println(F("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!\n"));
-    while(1);
-  }
-
-  Serial.println(F("\n\nBNO055 detected OK\n\n"));
-  
-  delay(1000);
-      
-  bno.setExtCrystalUse(true);
- 
-	pinMode(internalLEDPin, OUTPUT);		
-}
-
-
-struct State {
-	virtual void enter () = 0;
-	virtual void action () = 0;
-	virtual void leave () = 0;
-};
-
-struct NullState : public State{
-	void enter () {
-	}
-
-	void action () {
-	}
-
-	void leave () {
-	}
-};
-
-State* currentState = NULL;
-
-void stateGoto (State* state) {
-	if (currentState)
-		currentState->leave();
-
-	currentState = state;
-
-	if (currentState)
-		currentState->enter();
-}
 
 struct GyroCalState : public State{
 
-
 	void enter () {
 		Serial.println(F("\n\nEntering: Gyro Offest Calibration"));
-
 	}
 
 	void action () {
@@ -104,9 +53,7 @@ struct GyroCalState : public State{
 	}
 };
 
-
 GyroCalState gyroCalState;
-
 
 struct ServoCalState : public State{
 
@@ -122,11 +69,12 @@ struct ServoCalState : public State{
   }
 
 	void update () {
-		leftServo.writeMicroseconds(offsets.leftVal);
-		rightServo.writeMicroseconds(offsets.rightVal);
-		Serial.print(offsets.leftVal);
+		drive.setServoConfig(lconfig, rconfig);
+		drive.drive(0);
+
+		Serial.print(lconfig.zeropoint);
 		Serial.print(' ');
-		Serial.println(offsets.rightVal);		
+		Serial.println(rconfig.zeropoint);		
 	}
 
 	void enter () {
@@ -134,8 +82,8 @@ struct ServoCalState : public State{
 		leftServo.attach(10);
 		rightServo.attach(9);
 
-		lconfig. = 1500;
-		offsets.rightVal = 1500;
+		lconfig.zeropoint = 1500;
+		rconfig.zeropoint = 1500;
 
 		update();
 	}
@@ -148,15 +96,15 @@ struct ServoCalState : public State{
 			{
 				case 'q': stateGoto(NULL); break;
 
-				case '1': offsets.leftVal -= 10; break;
-				case '2': offsets.leftVal -= 1;  break;
-				case '3': offsets.leftVal += 1;  break;
-				case '4': offsets.leftVal += 10; break;
+				case '1': lconfig.zeropoint -= 10; break;
+				case '2': lconfig.zeropoint -= 1;  break;
+				case '3': lconfig.zeropoint += 1;  break;
+				case '4': lconfig.zeropoint += 10; break;
 
-				case '7': offsets.rightVal -= 10; break;
-				case '8': offsets.rightVal -= 1;  break;
-				case '9': offsets.rightVal += 1;  break;
-				case '0': offsets.rightVal += 10; break;
+				case '7': rconfig.zeropoint -= 10; break;
+				case '8': rconfig.zeropoint -= 1;  break;
+				case '9': rconfig.zeropoint += 1;  break;
+				case '0': rconfig.zeropoint += 10; break;
 			}
 			update();
 		}
@@ -175,12 +123,14 @@ struct MenuState : public State{
 	int twirly;
 
 	void writeDefaultConfig () {
+/*
 		ConfigData cd;
 
 		cd.servo.leftVal = 1500;
 		cd.servo.rightVal = 1500;
 
-		writeStructEEPROM(cd, 0);		
+		writeStructEEPROM(cd, 0);
+		*/		
 		Serial.println(F("\n  Default Config Written \n"));
 		enter();
 	}
@@ -217,11 +167,34 @@ struct MenuState : public State{
 
 MenuState menuState;
 
-void loop () {
-	if (!currentState)
-		stateGoto(&menuState);
+StateMachine mainStateMachine;
 
-	if (currentState)
-		currentState->action();
+
+void setup() {
+	
+	pinMode(8, OUTPUT);
+	digitalWrite(8, HIGH); // turn on the radio
+	Serial.begin(115200);
+
+	/* Initialise the sensor */
+	if(!bno.begin())
+	{
+		/* There was a problem detecting the BNO055 ... check your connections */
+		Serial.println(F("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!\n"));
+		while(1);
+	}
+
+	Serial.println(F("\n\nBNO055 detected OK\n\n"));
+	delay(1000);
+	bno.setExtCrystalUse(true);
+	pinMode(internalLEDPin, OUTPUT);
+
+	// initial state is menu
+	mainStateMachine.stateGoto(&menuState);
+}
+
+
+void loop () {
+	mainStateMachine.stateAction();
 }
 

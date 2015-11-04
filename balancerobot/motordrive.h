@@ -17,12 +17,12 @@ class MotorDrive {
   
   public:
     MotorDrive(Servo *lservo, Servo *rservo);
-    void setServoConfig (const ServoConfig& lconf, const ServoConfig& rconf);
+    void setServoConfig(const ServoConfig& lconf, const ServoConfig& rconf);
 
     void drive (int value);
     void drive (int lvalue, int rvalue);
 
-    void setRaw (int lvalue, int rvalue)l
+    void setRaw (int lvalue, int rvalue);
 };
 
 
