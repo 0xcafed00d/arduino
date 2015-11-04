@@ -6,33 +6,29 @@
 struct StateMachine;
 
 struct State {
-	StateMachine* sm; 
+  StateMachine* sm;
 
-	virtual void enter () = 0;
-	virtual void action () = 0;
-	virtual void leave () = 0;
+  virtual void enter() = 0;
+  virtual void action() = 0;
+  virtual void leave() = 0;
 
-	void stateGoto (State* state);
+  void stateGoto(State* state);
 };
 
-struct NullState : public State{
-	inline void enter () {
-	}
+struct NullState : public State {
+  inline void enter() {}
 
-	inline void action () {
-	}
+  inline void action() {}
 
-	inline void leave () {
-	}
+  inline void leave() {}
 };
 
 struct StateMachine {
-	State* currentState;	
+  State* currentState;
 
-	inline StateMachine () : currentState(NULL) {}
-	void stateGoto (State* state);
-	void stateAction ();
+  inline StateMachine() : currentState(NULL) {}
+  void stateGoto(State* state);
+  void stateAction();
 };
-
 
 #endif

@@ -9,21 +9,20 @@ struct ServoConfig {
 };
 
 class MotorDrive {
-  private:
-    ServoConfig m_lconf;
-    ServoConfig m_rconf;
-    Servo* m_lservo;
-    Servo* m_rservo;
-  
-  public:
-    MotorDrive(Servo *lservo, Servo *rservo);
-    void setServoConfig(const ServoConfig& lconf, const ServoConfig& rconf);
+ private:
+  ServoConfig m_lconf;
+  ServoConfig m_rconf;
+  Servo* m_lservo;
+  Servo* m_rservo;
 
-    void drive (int value);
-    void drive (int lvalue, int rvalue);
+ public:
+  MotorDrive(Servo* lservo, Servo* rservo);
+  void setServoConfig(const ServoConfig& lconf, const ServoConfig& rconf);
 
-    void setRaw (int lvalue, int rvalue);
+  void drive(int value);
+  void drive(int lvalue, int rvalue);
+
+  void setRaw(int lvalue, int rvalue);
 };
-
 
 #endif
