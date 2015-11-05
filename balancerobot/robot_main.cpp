@@ -13,7 +13,10 @@
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
-bool blinkState = false;
+struct ConfigData {
+  ServoConfig lconfig;
+  ServoConfig rconfig;
+};
 
 struct GyroCalState : public State {
   void enter() { Serial.println(F("\n\nEntering: Gyro Offest Calibration")); }
@@ -52,29 +55,26 @@ struct ServoCalState : public State {
   Servo leftServo;
   Servo rightServo;
 
-  ServoConfig lconfig;
-  ServoConfig rconfig;
-
+  ConfigData cd;
   MotorDrive drive;
 
   ServoCalState() : drive(&leftServo, &rightServo) {}
 
   void update() {
-    drive.setServoConfig(lconfig, rconfig);
+    drive.setServoConfig(cd.lconfig, cd.rconfig);
     drive.drive(0);
 
-    Serial.print(lconfig.zeropoint);
+    Serial.print(cd.lconfig.zeropoint);
     Serial.print(' ');
-    Serial.println(rconfig.zeropoint);
+    Serial.println(cd.rconfig.zeropoint);
   }
 
   void enter() {
     Serial.println(F("\n\nEntering: Servo Zero Point Calibration"));
-    leftServo.attach(10);
-    rightServo.attach(9);
+    leftServo.attach(servoLeftPin);
+    rightServo.attach(servoRightPin);
 
-    lconfig.zeropoint = 1500;
-    rconfig.zeropoint = 1500;
+    readStructEEPROM(cd, 0);
 
     update();
   }
@@ -88,29 +88,29 @@ struct ServoCalState : public State {
           break;
 
         case '1':
-          lconfig.zeropoint -= 10;
+          cd.lconfig.zeropoint -= 10;
           break;
         case '2':
-          lconfig.zeropoint -= 1;
+          cd.lconfig.zeropoint -= 1;
           break;
         case '3':
-          lconfig.zeropoint += 1;
+          cd.lconfig.zeropoint += 1;
           break;
         case '4':
-          lconfig.zeropoint += 10;
+          cd.lconfig.zeropoint += 10;
           break;
 
         case '7':
-          rconfig.zeropoint -= 10;
+          cd.rconfig.zeropoint -= 10;
           break;
         case '8':
-          rconfig.zeropoint -= 1;
+          cd.rconfig.zeropoint -= 1;
           break;
         case '9':
-          rconfig.zeropoint += 1;
+          cd.rconfig.zeropoint += 1;
           break;
         case '0':
-          rconfig.zeropoint += 10;
+          cd.rconfig.zeropoint += 10;
           break;
       }
       update();
@@ -120,6 +120,8 @@ struct ServoCalState : public State {
   void leave() {
     leftServo.detach();
     rightServo.detach();
+
+    writeStructEEPROM(cd, 0);
   }
 };
 
@@ -129,14 +131,15 @@ struct MenuState : public State {
   int twirly;
 
   void writeDefaultConfig() {
-    /*
-                    ConfigData cd;
+    ConfigData cd;
 
-                    cd.servo.leftVal = 1500;
-                    cd.servo.rightVal = 1500;
+    cd.lconfig.zeropoint = 1500;
+    cd.lconfig.range = 500;
+    cd.rconfig.zeropoint = 1500;
+    cd.rconfig.range = 500;
 
-                    writeStructEEPROM(cd, 0);
-                    */
+    writeStructEEPROM(cd, 0);
+
     Serial.println(F("\n  Default Config Written \n"));
     enter();
   }
@@ -201,4 +204,9 @@ void setup() {
   mainStateMachine.stateGoto(&menuState);
 }
 
-void loop() { mainStateMachine.stateAction(); }
+void loop() {
+  if (mainStateMachine.currentState == NULL)
+    mainStateMachine.stateGoto(&menuState);
+
+  mainStateMachine.stateAction();
+}
