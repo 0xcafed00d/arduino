@@ -4,8 +4,6 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 
-//#include <avr/pgmspace.h>
-
 #include "utils.h"
 #include "hardwaredefs.h"
 #include "motordrive.h"
@@ -14,9 +12,32 @@
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 struct ConfigData {
+  uint16_t sig;
   ServoConfig lconfig;
   ServoConfig rconfig;
 };
+
+void writeDefaultConfig() {
+  ConfigData cd;
+
+  cd.sig = 0xCAFE;
+
+  cd.lconfig.zeropoint = 1500;
+  cd.lconfig.range = 500;
+  cd.rconfig.zeropoint = 1500;
+  cd.rconfig.range = 500;
+
+  writeStructEEPROM(cd, 0);
+
+  Serial.println(F("\n  Default Config Written \n"));
+}
+
+bool readConfig(ConfigData& config) {
+  readStructEEPROM(config, 0);
+  return config.sig == 0xCAFE;
+}
+
+void writeConfig(const ConfigData& config) { writeStructEEPROM(config, 0); }
 
 struct GyroCalState : public State {
   void enter() { Serial.println(F("\n\nEntering: Gyro Offest Calibration")); }
@@ -74,7 +95,9 @@ struct ServoCalState : public State {
     leftServo.attach(servoLeftPin);
     rightServo.attach(servoRightPin);
 
-    readStructEEPROM(cd, 0);
+    if (readConfig(cd)) {
+      writeDefaultConfig();
+    }
 
     update();
   }
@@ -121,6 +144,8 @@ struct ServoCalState : public State {
     leftServo.detach();
     rightServo.detach();
 
+    writeConfig(cd);
+
     writeStructEEPROM(cd, 0);
   }
 };
@@ -129,20 +154,6 @@ ServoCalState servoCalState;
 
 struct MenuState : public State {
   int twirly;
-
-  void writeDefaultConfig() {
-    ConfigData cd;
-
-    cd.lconfig.zeropoint = 1500;
-    cd.lconfig.range = 500;
-    cd.rconfig.zeropoint = 1500;
-    cd.rconfig.range = 500;
-
-    writeStructEEPROM(cd, 0);
-
-    Serial.println(F("\n  Default Config Written \n"));
-    enter();
-  }
 
   void enter() {
     Serial.println(F("Mk1 Calibration. Select"));
@@ -165,6 +176,7 @@ struct MenuState : public State {
           break;
         case '0':
           writeDefaultConfig();
+          enter();
           break;
       }
     }
@@ -189,8 +201,7 @@ void setup() {
   /* Initialise the sensor */
   if (!bno.begin()) {
     /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.println(
-        F("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!\n"));
+    Serial.println(F("No BNO055 detected. Check your wiring or I2C ADDR!\n"));
     while (1)
       ;
   }
