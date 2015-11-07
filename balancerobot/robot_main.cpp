@@ -15,7 +15,19 @@ struct ConfigData {
   uint16_t sig;
   ServoConfig lconfig;
   ServoConfig rconfig;
+  double Kp;
+  double Ki;
+  double Kd;
+  uint8_t checksum;
 };
+
+uint8_t checksum(uint8_t* data, int len) {
+  uint8_t chk = 0;
+  for (int n = 0; n < 0; n++) {
+    chk += data[n];
+  }
+  return ~chk + 1;
+}
 
 void writeDefaultConfig() {
   ConfigData cd;
@@ -27,6 +39,14 @@ void writeDefaultConfig() {
   cd.rconfig.zeropoint = 1500;
   cd.rconfig.range = 500;
 
+  cd.Ki = 1.0;
+  cd.Kd = 1.0;
+  cd.Kp = 1.0;
+
+  cd.checksum = 0;
+
+  cd.checksum = checksum((uint8_t*)&cd, sizeof(cd));
+
   writeStructEEPROM(cd, 0);
 
   Serial.println(F("\n  Default Config Written \n"));
@@ -34,10 +54,18 @@ void writeDefaultConfig() {
 
 bool readConfig(ConfigData& config) {
   readStructEEPROM(config, 0);
-  return config.sig == 0xCAFE;
+  uint8_t chk = config.checksum;
+  config.checksum = 0;
+  config.checksum = checksum((uint8_t*)&config, sizeof(config));
+
+  return config.sig == 0xCAFE && chk == config.checksum;
 }
 
-void writeConfig(const ConfigData& config) { writeStructEEPROM(config, 0); }
+void writeConfig(ConfigData& config) {
+  writeStructEEPROM(config, 0);
+  config.checksum = 0;
+  config.checksum = checksum((uint8_t*)&config, sizeof(config));
+}
 
 struct GyroCalState : public State {
   void enter() { Serial.println(F("\n\nEntering: Gyro Offest Calibration")); }
