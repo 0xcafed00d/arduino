@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <avr/pgmspace.h>
 
 void setup() {
   pinMode(8, OUTPUT);
@@ -7,11 +8,22 @@ void setup() {
   Serial.begin(115200);
 }
 
+void printHex(Stream& str, uint16_t value, int digits) {
+  static const char hex[] PROGMEM = "0123456789ABCDEF";
+
+  value = value << ((4 - digits) * 4);
+
+  for (int d = 0; d < digits; d++) {
+    str.print((char)pgm_read_byte_near(hex + ((value >> 12) & 0xf)));
+    value = value << 4;
+  }
+}
+
 void dump(int addr) {
-  Serial.print(addr, HEX);
+  printHex(Serial, addr, 4);
   Serial.print(": ");
   for (int n = 0; n < 16; n++) {
-    Serial.print(EEPROM.read(addr + n), HEX);
+    printHex(Serial, EEPROM.read(addr + n), 2);
     Serial.print(" ");
   }
   Serial.println();
