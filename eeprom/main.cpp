@@ -19,6 +19,26 @@ void printHex(Stream& str, uint16_t value, int digits) {
   }
 }
 
+int parseHex(const char* str, uint16_t& value) {
+  int count = 0;
+  value = 0;
+
+  while (true) {
+    if (*str >= '0' && *str <= '9') {
+      value <<= 4;
+      value += *str++ - '0';
+    } else if (*str >= 'a' && *str <= 'f') {
+      value <<= 4;
+      value += *str++ - 'a' + 0xa;
+    } else if (*str >= 'A' && *str <= 'F') {
+      value <<= 4;
+      value += *str++ - 'A' + 0xa;
+    } else {
+      return count;
+    }
+  }
+}
+
 void dump(int addr) {
   printHex(Serial, addr, 4);
   Serial.print(": ");
@@ -30,8 +50,13 @@ void dump(int addr) {
 }
 
 void processBuffer(const char* buffer) {
+  uint16_t val;
+
+  parseHex(buffer, val);
   Serial.println("");
-  Serial.println(buffer);
+  printHex(Serial, val, 4);
+  Serial.println("");
+  //  Serial.println(buffer);
   dump(0);
 }
 
