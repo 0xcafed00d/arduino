@@ -49,16 +49,69 @@ void dump(int addr) {
   Serial.println();
 }
 
-void processBuffer(const char* buffer) {
-  uint16_t val;
+struct CommandHandler {
+  char cmd;
+  bool (*func)(uint16_t argv[], int argc);
+};
 
-  parseHex(buffer, val);
-  Serial.println("");
-  printHex(Serial, val, 4);
-  Serial.println("");
-  //  Serial.println(buffer);
-  dump(0);
+bool dumpcmd(uint16_t argv[], int argc) {
+  if (argc >= 1) {
+    uint16_t addr = argv[0];
+    dump(addr);
+    return true;
+  }
+  return false;
 }
+
+bool writecmd(uint16_t argv[], int argc) {
+  Serial.println(argc);
+
+  if (argc >= 2) {
+    uint16_t addr = argv[0];
+
+    for (int n = 1; n < argc; n++) {
+      EEPROM.write(addr + n, (uint8_t)argv[n]);
+    }
+
+    return true;
+  }
+  return false;
+}
+
+const char* advance(const char* buffer) {
+  while (*buffer && !isHexadecimalDigit(*buffer)) {
+    buffer++;
+  }
+  return buffer;
+}
+
+bool parseCommand(const char* buffer, const CommandHandler* commands) {
+  if (isAlpha(*buffer)) {
+    char cmd = *buffer++;
+    int argc = 0;
+    uint16_t argv[17];
+
+    while (true) {
+      buffer = advance(buffer);
+      if (parseHex(buffer, argv[argc]) > 0) {
+        argc++;
+      } else {
+        break;
+      }
+    }
+
+    while (commands->cmd) {
+      if (cmd == commands->cmd) {
+        return commands->func(argv, argc);
+      }
+
+      commands++;
+    }
+  }
+  return false;
+}
+
+static CommandHandler commands[] = {{'d', dumpcmd}, {'w', writecmd}, {0, NULL}};
 
 const size_t bufferSize = 32;
 char inputBuffer[bufferSize + 1];
@@ -74,7 +127,8 @@ void loop() {
 
     if (in == '\r') {
       inputBuffer[inputIndex] = 0;
-      processBuffer(inputBuffer);
+      bool res = parseCommand(inputBuffer, commands);
+      Serial.println(res ? "\nOK" : "\nERROR");
       inputIndex = 0;
     } else {
       if (in >= ' ' && inputIndex < bufferSize) {
