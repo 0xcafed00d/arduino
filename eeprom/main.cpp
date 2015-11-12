@@ -6,6 +6,12 @@ void setup() {
   pinMode(8, OUTPUT);
   digitalWrite(8, HIGH);  // turn on the radio
   Serial.begin(115200);
+
+  while (!Serial)
+    ;
+
+  Serial.println(F("EEPROM R/W tool. type h for help"));
+  Serial.print(F("> "));
 }
 
 void printHex(Stream& str, uint16_t value, int digits) {
@@ -53,6 +59,12 @@ struct CommandHandler {
   char cmd;
   bool (*func)(uint16_t argv[], int argc);
 };
+
+bool helpcmd(uint16_t argv[], int argc) {
+  Serial.println();
+  Serial.println(F("dump data:  d <addr>"));
+  Serial.println(F("write byte: w <addr> <byte0> .... <byte15>"));
+}
 
 bool dumpcmd(uint16_t argv[], int argc) {
   if (argc >= 1) {
@@ -112,7 +124,8 @@ bool parseCommand(const char* buffer, CommandHandler* commands) {
   return false;
 }
 
-static CommandHandler commands[] = {{'d', dumpcmd}, {'w', writecmd}, {0, NULL}};
+static CommandHandler commands[] = {
+    {'d', dumpcmd}, {'w', writecmd}, {'h', helpcmd}, {0, NULL}};
 
 const size_t bufferSize = 32;
 char inputBuffer[bufferSize + 1];
@@ -130,8 +143,9 @@ void loop() {
       inputBuffer[inputIndex] = 0;
       bool res = parseCommand(inputBuffer, commands);
       Serial.println("");
-      Serial.println(res ? "OK" : "ERROR");
+      Serial.println(res ? F("OK") : F("ERROR"));
       inputIndex = 0;
+      Serial.print(F("> "));
     } else {
       if (in >= ' ' && inputIndex < bufferSize) {
         inputBuffer[inputIndex++] = (char)in;

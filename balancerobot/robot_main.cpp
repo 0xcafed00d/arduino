@@ -123,8 +123,9 @@ struct ServoCalState : public State {
     leftServo.attach(servoLeftPin);
     rightServo.attach(servoRightPin);
 
-    if (readConfig(cd)) {
+    if (!readConfig(cd)) {
       writeDefaultConfig();
+      readConfig(cd);
     }
 
     update();
