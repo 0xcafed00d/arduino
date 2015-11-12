@@ -25,14 +25,14 @@ int parseHex(const char* str, uint16_t& value) {
 
   while (true) {
     if (*str >= '0' && *str <= '9') {
-      value <<= 4;
-      value += *str++ - '0';
+      value = (value << 4) + *str++ - '0';
+      count++;
     } else if (*str >= 'a' && *str <= 'f') {
-      value <<= 4;
-      value += *str++ - 'a' + 0xa;
+      value = (value << 4) + *str++ - 'a' + 0xa;
+      count++;
     } else if (*str >= 'A' && *str <= 'F') {
-      value <<= 4;
-      value += *str++ - 'A' + 0xa;
+      value = (value << 4) + *str++ - 'A' + 0xa;
+      count++;
     } else {
       return count;
     }
@@ -57,6 +57,7 @@ struct CommandHandler {
 bool dumpcmd(uint16_t argv[], int argc) {
   if (argc >= 1) {
     uint16_t addr = argv[0];
+    Serial.println("");
     dump(addr);
     return true;
   }
@@ -64,13 +65,11 @@ bool dumpcmd(uint16_t argv[], int argc) {
 }
 
 bool writecmd(uint16_t argv[], int argc) {
-  Serial.println(argc);
-
   if (argc >= 2) {
     uint16_t addr = argv[0];
 
     for (int n = 1; n < argc; n++) {
-      EEPROM.write(addr + n, (uint8_t)argv[n]);
+      EEPROM.write(addr + n - 1, (uint8_t)argv[n]);
     }
 
     return true;
@@ -85,15 +84,17 @@ const char* advance(const char* buffer) {
   return buffer;
 }
 
-bool parseCommand(const char* buffer, const CommandHandler* commands) {
-  if (isAlpha(*buffer)) {
+bool parseCommand(const char* buffer, CommandHandler* commands) {
+  if (isalpha(*buffer)) {
     char cmd = *buffer++;
     int argc = 0;
     uint16_t argv[17];
 
     while (true) {
       buffer = advance(buffer);
-      if (parseHex(buffer, argv[argc]) > 0) {
+      int parsed = parseHex(buffer, argv[argc]);
+      if (parsed > 0) {
+        buffer += parsed;
         argc++;
       } else {
         break;
@@ -128,7 +129,8 @@ void loop() {
     if (in == '\r') {
       inputBuffer[inputIndex] = 0;
       bool res = parseCommand(inputBuffer, commands);
-      Serial.println(res ? "\nOK" : "\nERROR");
+      Serial.println("");
+      Serial.println(res ? "OK" : "ERROR");
       inputIndex = 0;
     } else {
       if (in >= ' ' && inputIndex < bufferSize) {
