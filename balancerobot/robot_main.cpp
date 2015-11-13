@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
+#include <EEPROM.h>
 
 #include "utils.h"
 #include "hardwaredefs.h"
@@ -23,7 +24,7 @@ struct ConfigData {
 
 uint8_t checksum(uint8_t* data, int len) {
   uint8_t chk = 0;
-  for (int n = 0; n < 0; n++) {
+  for (int n = 0; n < len; n++) {
     chk += data[n];
   }
   return ~chk + 1;
