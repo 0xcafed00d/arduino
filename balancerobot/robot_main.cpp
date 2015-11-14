@@ -10,6 +10,8 @@
 #include "motordrive.h"
 #include "state.h"
 
+#include "gyrocalibrate.h"
+
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 struct ConfigData {
@@ -68,38 +70,7 @@ void writeConfig(ConfigData& config) {
   config.checksum = checksum((uint8_t*)&config, sizeof(config));
 }
 
-struct GyroCalState : public State {
-  void enter() { Serial.println(F("\n\nEntering: Gyro Offest Calibration")); }
-
-  void action() {
-    sensors_event_t event;
-    bno.getEvent(&event);
-
-    /* Display the floating point data */
-    Serial.print("X: ");
-    Serial.print(event.orientation.x, 4);
-    Serial.print("\tY: ");
-    Serial.print(event.orientation.y, 4);
-    Serial.print("\tZ: ");
-    Serial.print(event.orientation.z, 4);
-    Serial.println("");
-
-    delay(100);
-
-    int ch = Serial.read();
-    if (ch > 0) {
-      switch (ch) {
-        case 'q':
-          stateGoto(NULL);
-          break;
-      }
-    }
-  }
-
-  void leave() {}
-};
-
-GyroCalState gyroCalState;
+GyroCalState gyroCalState(&bno);
 
 struct ServoCalState : public State {
   Servo leftServo;

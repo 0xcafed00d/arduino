@@ -1,4 +1,4 @@
-#ifndef __STATE_INLCUDED_H__
+#ifndef __STATE_INCLUDED_H__
 #define __STATE_INCLUDED_H__
 
 #include <Arduino.h>
