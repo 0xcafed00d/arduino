@@ -7,150 +7,15 @@
 
 #include "utils.h"
 #include "hardwaredefs.h"
-#include "motordrive.h"
 #include "state.h"
 
 #include "gyrocalibrate.h"
+#include "servocalibrate.h"
+#include "config.h"
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
-struct ConfigData {
-  uint16_t sig;
-  ServoConfig lconfig;
-  ServoConfig rconfig;
-  double Kp;
-  double Ki;
-  double Kd;
-  uint8_t checksum;
-};
-
-uint8_t checksum(uint8_t* data, int len) {
-  uint8_t chk = 0;
-  for (int n = 0; n < len; n++) {
-    chk += data[n];
-  }
-  return ~chk + 1;
-}
-
-void writeDefaultConfig() {
-  ConfigData cd;
-
-  cd.sig = 0xCAFE;
-
-  cd.lconfig.zeropoint = 1500;
-  cd.lconfig.range = 500;
-  cd.rconfig.zeropoint = 1500;
-  cd.rconfig.range = 500;
-
-  cd.Ki = 1.0;
-  cd.Kd = 1.0;
-  cd.Kp = 1.0;
-
-  cd.checksum = 0;
-
-  cd.checksum = checksum((uint8_t*)&cd, sizeof(cd));
-
-  writeStructEEPROM(cd, 0);
-
-  Serial.println(F("\n  Default Config Written \n"));
-}
-
-bool readConfig(ConfigData& config) {
-  readStructEEPROM(config, 0);
-  uint8_t chk = config.checksum;
-  config.checksum = 0;
-  config.checksum = checksum((uint8_t*)&config, sizeof(config));
-
-  return config.sig == 0xCAFE && chk == config.checksum;
-}
-
-void writeConfig(ConfigData& config) {
-  writeStructEEPROM(config, 0);
-  config.checksum = 0;
-  config.checksum = checksum((uint8_t*)&config, sizeof(config));
-}
-
 GyroCalState gyroCalState(&bno);
-
-struct ServoCalState : public State {
-  Servo leftServo;
-  Servo rightServo;
-
-  ConfigData cd;
-  MotorDrive drive;
-
-  ServoCalState() : drive(&leftServo, &rightServo) {}
-
-  void update() {
-    drive.setServoConfig(cd.lconfig, cd.rconfig);
-    drive.drive(0);
-
-    Serial.print(cd.lconfig.zeropoint);
-    Serial.print(' ');
-    Serial.println(cd.rconfig.zeropoint);
-  }
-
-  void enter() {
-    Serial.println(F("\n\nEntering: Servo Zero Point Calibration"));
-    leftServo.attach(servoLeftPin);
-    rightServo.attach(servoRightPin);
-
-    if (!readConfig(cd)) {
-      writeDefaultConfig();
-      readConfig(cd);
-    }
-
-    update();
-  }
-
-  void action() {
-    int ch = Serial.read();
-    if (ch > 0) {
-      switch (ch) {
-        case 'q':
-          stateGoto(NULL);
-          break;
-
-        case '1':
-          cd.lconfig.zeropoint -= 10;
-          break;
-        case '2':
-          cd.lconfig.zeropoint -= 1;
-          break;
-        case '3':
-          cd.lconfig.zeropoint += 1;
-          break;
-        case '4':
-          cd.lconfig.zeropoint += 10;
-          break;
-
-        case '7':
-          cd.rconfig.zeropoint -= 10;
-          break;
-        case '8':
-          cd.rconfig.zeropoint -= 1;
-          break;
-        case '9':
-          cd.rconfig.zeropoint += 1;
-          break;
-        case '0':
-          cd.rconfig.zeropoint += 10;
-          break;
-      }
-      update();
-    }
-  }
-
-  void leave() {
-    leftServo.detach();
-    rightServo.detach();
-
-    writeConfig(cd);
-
-    writeStructEEPROM(cd, 0);
-  }
-};
-
 ServoCalState servoCalState;
 
 struct MenuState : public State {
