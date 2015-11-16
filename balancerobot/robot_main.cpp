@@ -1,22 +1,18 @@
 #include <Arduino.h>
-#include <Servo.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
-#include <EEPROM.h>
-
-#include "utils.h"
-#include "hardwaredefs.h"
-#include "state.h"
 
 #include "gyrocalibrate.h"
 #include "servocalibrate.h"
+#include "balance.h"
 #include "config.h"
 
-Adafruit_BNO055 bno = Adafruit_BNO055(55);
+Adafruit_BNO055 IMU = Adafruit_BNO055(55);
 
-GyroCalState gyroCalState(&bno);
+GyroCalState gyroCalState(&IMU);
 ServoCalState servoCalState;
+BalanceState balanceState(&IMU);
 
 struct MenuState : public State {
   int twirly;
@@ -26,6 +22,7 @@ struct MenuState : public State {
     Serial.println(F("  0: Default Config"));
     Serial.println(F("  1: Gyro Offest Calibration"));
     Serial.println(F("  2: Servo Zero Point Calibration"));
+    Serial.println(F("  3: Balance"));
 
     twirly = 0;
   }
@@ -39,6 +36,9 @@ struct MenuState : public State {
           break;
         case '2':
           stateGoto(&servoCalState);
+          break;
+        case '3':
+          stateGoto(&balanceState);
           break;
         case '0':
           writeDefaultConfig();
@@ -65,7 +65,7 @@ void setup() {
   Serial.begin(115200);
 
   /* Initialise the sensor */
-  if (!bno.begin()) {
+  if (!IMU.begin()) {
     /* There was a problem detecting the BNO055 ... check your connections */
     Serial.println(F("No BNO055 detected. Check your wiring or I2C ADDR!\n"));
     while (1)
@@ -74,7 +74,7 @@ void setup() {
 
   Serial.println(F("\n\nBNO055 detected OK\n\n"));
   delay(1000);
-  bno.setExtCrystalUse(true);
+  IMU.setExtCrystalUse(true);
   pinMode(internalLEDPin, OUTPUT);
 
   // initial state is menu
