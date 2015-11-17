@@ -78,12 +78,12 @@ void setup() {
   pinMode(internalLEDPin, OUTPUT);
 
   // initial state is menu
-  mainStateMachine.stateGoto(&menuState);
+  //  mainStateMachine.stateGoto(&menuState);
 }
 
 void loop() {
   if (mainStateMachine.currentState == NULL)
-    mainStateMachine.stateGoto(&menuState);
+    mainStateMachine.stateGoto(&balanceState);
 
   mainStateMachine.stateAction();
 }

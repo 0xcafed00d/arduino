@@ -3,7 +3,7 @@
 BalanceState::BalanceState(Adafruit_BNO055* imu)
     : imu(imu),
       drive(&leftServo, &rightServo),
-      pid(&pidInput, &pidOutput, &pidTarget, 4, 5, 1, DIRECT) {}
+      pid(&pidInput, &pidOutput, &pidTarget, 10, 1, 1, DIRECT) {}
 
 void BalanceState::enter() {
   Serial.println(F("\n\nEntering: Robot Balance State"));
@@ -19,6 +19,7 @@ void BalanceState::enter() {
   rightServo.attach(servoRightPin);
 
   pid.SetOutputLimits(-1.0, 1.0);
+  pid.SetSampleTime(10);
   drive.drive(0);
   pid.SetMode(AUTOMATIC);
 }
@@ -33,7 +34,7 @@ void BalanceState::action() {
 
   drive.drive(1000 * pidOutput);
 
-  delay(50);
+  delay(5);
   int ch = Serial.read();
   if (ch == 'q') {
     stateGoto(NULL);
