@@ -20,9 +20,9 @@ void writeDefaultConfig() {
   cd.rconfig.zeropoint = 1500;
   cd.rconfig.range = 500;
 
-  cd.Ki = 1.0;
-  cd.Kd = 1.0;
-  cd.Kp = 1.0;
+  cd.Kp = 17.0;
+  cd.Ki = 1.7;
+  cd.Kd = 0.2;
 
   cd.checksum = 0;
 

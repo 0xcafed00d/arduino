@@ -83,7 +83,7 @@ void setup() {
 
 void loop() {
   if (mainStateMachine.currentState == NULL)
-    mainStateMachine.stateGoto(&balanceState);
+    mainStateMachine.stateGoto(&menuState);
 
   mainStateMachine.stateAction();
 }
