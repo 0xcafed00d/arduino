@@ -25,6 +25,7 @@ void BalanceState::enter() {
   pid.SetSampleTime(10);
   drive.drive(0);
   pid.SetMode(AUTOMATIC);
+  pidTarget = 0;
 }
 
 void BalanceState::action() {
@@ -32,7 +33,6 @@ void BalanceState::action() {
   imu->getEvent(&event);
 
   pidInput = event.orientation.y / 90.0;
-  pidTarget = 0;
   pid.Compute();
 
   if (event.orientation.y < 10.0 && event.orientation.y > -10.0)
@@ -66,6 +66,13 @@ void BalanceState::action() {
       break;
     case 'D':
       cd.Kd -= 0.1;
+      break;
+
+    case 'w':
+      pidTarget += 0.01;
+      break;
+    case 's':
+      pidTarget -= 0.01;
       break;
   }
 
