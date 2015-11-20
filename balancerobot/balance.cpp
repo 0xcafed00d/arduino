@@ -32,13 +32,14 @@ void BalanceState::action() {
   sensors_event_t event;
   imu->getEvent(&event);
 
-  pidInput = event.orientation.y / 90.0;
-  pid.Compute();
+  if (event.orientation.y < 10.0 && event.orientation.y > -10.0) {
+    pidInput = event.orientation.y / 90.0;
+    pid.Compute();
 
-  if (event.orientation.y < 10.0 && event.orientation.y > -10.0)
     drive.drive(1000 * pidOutput);
-  else
+  } else {
     drive.drive(0);
+  }
 
   delay(5);
   int ch = Serial.read();
