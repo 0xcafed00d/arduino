@@ -45,14 +45,32 @@ int parseHex(const char* str, uint16_t& value) {
   }
 }
 
-void dump(int addr) {
-  printHex(Serial, addr, 4);
-  Serial.print(": ");
-  for (int n = 0; n < 16; n++) {
-    printHex(Serial, EEPROM.read(addr + n), 2);
-    Serial.print(" ");
+void dump(int addr, int count) {
+  char buffer[17];
+  buffer[16] = 0;
+
+  while (count > 0) {
+    printHex(Serial, addr, 4);
+    Serial.print(": ");
+    for (int n = 0; n < 16; n++) {
+      buffer[n] = '.';
+      if (count > 0) {
+        uint8_t c = EEPROM.read(addr + n);
+        printHex(Serial, c, 2);
+        if (c >= ' ' && c <= 127) {
+          buffer[n] = c;
+        }
+      } else {
+        Serial.print("__");
+      }
+      Serial.print(" ");
+      count--;
+    }
+    Serial.print(": ");
+    Serial.print(buffer);
+    Serial.println("");
+    addr += 16;
   }
-  Serial.println();
 }
 
 struct CommandHandler {
@@ -62,17 +80,18 @@ struct CommandHandler {
 
 bool helpcmd(uint16_t argv[], int argc) {
   Serial.println();
-  Serial.println(F("dump data:  d <addr>"));
+  Serial.println(F("dump data:  d <addr> <count>"));
   Serial.println(F("write byte: w <addr> <byte0> .... <byte15>"));
 }
 
 bool dumpcmd(uint16_t argv[], int argc) {
-  if (argc >= 1) {
+  if (argc == 2) {
     uint16_t addr = argv[0];
     Serial.println("");
-    dump(addr);
+    dump(addr, argv[1]);
     return true;
   }
+
   return false;
 }
 
