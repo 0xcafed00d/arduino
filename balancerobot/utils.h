@@ -84,7 +84,11 @@ class RunningAverage {
 template <typename type>
 int writeStructEEPROM(const type& s, int addr) {
   for (int n = 0; n < sizeof(type); n++) {
-    EEPROM.write(addr + n, ((int8_t*)&s)[n]);
+    int8_t val = ((int8_t*)&s)[n];
+    EEPROM.write(addr + n, val);
+    if (val != EEPROM.read(addr + n)) {
+      return -1;
+    }
   }
   return sizeof(type);
 }
