@@ -28,3 +28,8 @@
 *.app
 
 libraries/*
+
+#platformio files
+.pioenvs
+.sconsign.dblite
+
